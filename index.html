@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bluesky Post Analyser</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #007bff; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="password"], input[type="number"], input[type="date"],
+         select {
+            width: calc(100% - 22px); /* Account for padding and border */
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box; /* Include padding in width */
+        }
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        /* Styles for Flash Messages */
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .flash-message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .flash-message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .flash-message.warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+
+        .download-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px; /* Space between buttons */
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .button-group button {
+            flex: 1; /* Make buttons equal width */
+            max-width: 200px;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px; /* Space between label and input */
+            margin-bottom: 15px
+        }
+        .form-column {
+            flex: 1;
+            min-width: 0;
+
+        }
+
+        .form-column label {
+            display: inline flex;
+            align-items: center;
+            margin-bottom: 0;
+            font-weight: bold;
+        }
+        .form-column input[type="date"] {
+            width: 100%;
+                    }
+         
+
+            </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bluesky Post Analyser</h1>
+        <p>This simple tool allows you to analyse your Bluesky Posts. You can visualize engagement metrics, track post performance over time, and download your data for further analysis.</p>
+        {# Display flash messages #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <p class="flash-message {{ category }}">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <label for="handle">Bluesky Handle:</label>
+            <input type="text" id="handle" name="handle" placeholder="yourhandle.bsky.social" required value="{{ request.form.handle if request.method == 'POST' else '' }}">
+
+            <label for="app_password">Bluesky App Password:</label>
+            <input type="password" id="app_password" placeholder="Go to Settings > Privacy & Security > App Passwords" name="app_password" required>
+
+            <label for="limit">Number of Posts to Fetch (max 500):</label>
+            <input type="number" id="limit" name="limit" value="{{ request.form.limit if request.method == 'POST' else '100' }}" min="1" max="500" required>
+
+            <label for="from_date">From Date:</label>
+            <input type="date" id="from_date" name="from_date" value="{{ request.form.from_date if request.method == 'POST' else '' }}">
+
+            <label for="to_date">To Date:</label>
+            <input type="date" id="to_date" name="to_date" value="{{ request.form.to_date if request.method == 'POST' else '' }}">
+
+            <div class="form-row">
+                <div class="form-column">
+                    <label for="include_replies" class="checkbox-label-container">
+                        <input type="checkbox" id="include_replies" name="include_replies" {% if request.method == 'POST' and request.form.get('include_replies') == 'on' %}checked{% endif %}>
+                        Include Replies
+                    </label>
+                </div>
+                <div class="form-column">
+                    <label for="include_reposts" class="checkbox-label-container">
+                        <input type="checkbox" id="include_reposts" name="include_reposts" {% if request.method == 'POST' and request.form.get('include_reposts') == 'on' %}checked{% endif %}>
+                        Include Reposts
+                    </label>
+                </div>
+            </div>
+            
+            <label for="timezone">Your Timezone:</label>
+            <select id="timezone" name="timezone" required>
+                {% for tz in timezones %}
+                    <option value="{{ tz }}" {% if request.method == 'POST' and request.form.timezone == tz %}selected{% endif %}>{{ tz }}</option>
+                {% endfor %}
+            </select>
+            <br><br>
+
+            <div class="button-group">
+                <button type="submit" name="action" value="download_csv">Download CSV</button>
+                <button type="submit" name="action" value="analyze_posts">Analyze My Posts</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
